@@ -17,6 +17,18 @@ public class RenderContext
         _g.SmoothingMode = SmoothingMode.AntiAlias;
     }
 
+    public void DrawSprite(Point p1, Size s1, string sprite)
+    {
+        // draw the sprite image using graphics path
+        // giving up on this for now
+
+        _g.DrawImage(Image.FromFile(sprite), new Rectangle(p1, s1));
+
+        //GraphicsPath path = new GraphicsPath();
+        //path.AddRectangle(new Rectangle(p1, s1));
+        //DrawPath(Color.White, path);
+    }
+
     public void Clear(Color color)
     {
         // clear the screen using the color

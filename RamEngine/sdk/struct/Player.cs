@@ -145,7 +145,10 @@ public class Player
 
     public void Draw(RenderContext ctx)
     {
+        // draw the player sprite at assets\\ram-sprite-32x32.png
+        ctx.DrawSprite(Position, Size, "assets\\ram-sprite-32x32.png");
+
         // draw a filled rectangle at the positon
-        ctx.DrawRectangle(Position, Size, Color, true);
+        //ctx.DrawRectangle(Position, Size, Color, true);
     }
 }
