@@ -23,14 +23,21 @@ public class BytecodeEngine : GameEngine
 
         Controls.Add(menu);
 
-        // floor
-        Instance.GetLevel().children.Add(new SolidObject(new Point(0, 400), new Size(Width, 10), Color.White));
+        //loop over all 4 window border walls and add solid objects to stop players from escaping them
 
-        Instance.GetLevel().children.Add(new SolidObject(new Point(200, 300), new Size(10, 100), Color.White));
+        // floor
+        Instance.GetLevel().children.Add(new SolidObject( new Point(0, Height - (menu.Size.Height * 2)), new Size(Width, 10), Color.White ));
+
+        // left wall
+        Instance.GetLevel().children.Add(new SolidObject( new Point(-11, 0), new Size(10, Height - (menu.Size.Height * 2)), Color.White ));
+
+        // right wall
+        Instance.GetLevel().children.Add(new SolidObject( new Point(Width - 10, 0), new Size(10, Height - (menu.Size.Height * 2)), Color.White ));
+
 
         // jumppad
         Instance.GetLevel().children.Add(new SolidObject(
-            new Point(25, 390),
+            new Point(50, Height - (menu.Size.Height * 2) - 10),
             new Size(30, 11),
             Color.Red,
             new List<string> { "JumpPad" }
@@ -67,7 +74,7 @@ public class BytecodeEngine : GameEngine
             {
                 // collided with the object so lets check the tags to see what we should do
                 if (obj.Tags.Contains("JumpPad"))
-                    Instance.GetLocalPlayer().ApplyKnockback(new Point(3, -15), 4);
+                    Instance.GetLocalPlayer().ApplyKnockback(new Point(0, -15), 4);
             }
         }
 
@@ -76,11 +83,11 @@ public class BytecodeEngine : GameEngine
         Instance.GetLocalPlayer().Draw(ctx);
 
         // some drawings
-        //ctx.DrawTriangle(new Point(10, 10), new Point(10, 100), new Point(100, 100), Color.Red, false);
-        //ctx.DrawTriangle(new Point(110, 10), new Point(110, 100), new Point(200, 100), Color.Red, true);
+        ctx.DrawTriangle(new Point(10, 10), new Point(10, 100), new Point(100, 100), Color.Red, false);
+        ctx.DrawTriangle(new Point(110, 10), new Point(110, 100), new Point(200, 100), Color.Red, true);
 
-        //ctx.DrawRectangle(new Point(10, 110), new Size(90, 90), Color.Red, false);
-        //ctx.DrawRectangle(new Point(110, 110), new Size(90, 90), Color.Red, true);
+        ctx.DrawRectangle(new Point(10, 110), new Size(90, 90), Color.Red, false);
+        ctx.DrawRectangle(new Point(110, 110), new Size(90, 90), Color.Red, true);
 
         // end the frame & draw all the remaining objects to the screen
         ctx.EndFrame();
