@@ -11,4 +11,8 @@ public class Level
             child.Draw(ctx);
         }
     }
+
+    public void Add(SolidObject obj) => children.Add(obj);
+    public void Remove(SolidObject obj) => children.Remove(obj);
+    public void RemoveBulk(List<SolidObject> list) => children.RemoveAll(x => list.Contains(x));
 }

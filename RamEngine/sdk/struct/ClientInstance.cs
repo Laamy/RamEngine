@@ -3,7 +3,7 @@
 public class ClientInstance
 {
     // define the player class
-    private Player LocalPlayer = new Player(new Point(100, 100), new Size(32, 32), Color.Red);
+    private Player LocalPlayer = new Player(new Point(100, 0), new Size(26, 32), Color.Red);
 
     // define the level class
     private Level Level = new Level();

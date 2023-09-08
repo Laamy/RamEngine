@@ -22,7 +22,7 @@ public class RenderContext
         // draw the sprite image using graphics path
         // giving up on this for now
 
-        _g.DrawImage(Image.FromFile(sprite), new Rectangle(p1, s1));
+        _g.DrawImage(TextureHandler.GetTexture(sprite), new Rectangle(p1, s1));
 
         //GraphicsPath path = new GraphicsPath();
         //path.AddRectangle(new Rectangle(p1, s1));

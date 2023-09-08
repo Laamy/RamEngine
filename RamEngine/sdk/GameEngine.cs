@@ -71,7 +71,14 @@ public class GameEngine : Form
         gameLoopThread.Start();
 
         // when the window exists it causes an exception so lets catch then ignore it
-        try { Application.Run(this); } catch { }
+        try
+        {
+            Application.Run(this);
+        } catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Console.ReadKey();
+        }
     }
 
     private void GameLoop()

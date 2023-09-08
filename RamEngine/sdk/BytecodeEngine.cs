@@ -26,22 +26,79 @@ public class BytecodeEngine : GameEngine
         //loop over all 4 window border walls and add solid objects to stop players from escaping them
 
         // floor
-        Instance.GetLevel().children.Add(new SolidObject( new Point(0, Height - (menu.Size.Height * 2)), new Size(Width, 10), Color.White ));
+        //Instance.GetLevel().children.Add(new SolidObject( new Point(0, Height - (menu.Size.Height * 2)), new Size(Width, 10), Color.White ));
 
-        // left wall
-        Instance.GetLevel().children.Add(new SolidObject( new Point(-11, 0), new Size(10, Height - (menu.Size.Height * 2)), Color.White ));
+        // world stuff
+        int blockSize = 20;
 
-        // right wall
-        Instance.GetLevel().children.Add(new SolidObject( new Point(Width - 10, 0), new Size(10, Height - (menu.Size.Height * 2)), Color.White ));
+        BlockType[][] world = TerrainGen.GenerateWorld(Width/ blockSize, Height/ blockSize, 7, 0.1f);
 
+        // foreach layer
+        int layerCount = 100;
+        foreach (BlockType[] layer in world)
+        {
+            int blockCount = 0;
+            // foreach terrain block
+            foreach (BlockType block in layer)
+            {
+                switch(block)
+                {
+                    case BlockType.Stone:
+                        {
+                            // stone
+
+                            SolidObject obj = new SolidObject(
+                                new Point(blockCount, layerCount),
+                                new Size(blockSize, blockSize),
+                                "assets\\blocks\\stone.png",
+                                new List<string>() { "Breakable" }
+                            );
+
+                            Instance.GetLevel().children.Add(obj);
+                        }
+                        break;
+                    case BlockType.Grass:
+                        {
+                            // grass
+
+                            SolidObject obj = new SolidObject(
+                                new Point(blockCount, layerCount),
+                                new Size(blockSize, blockSize),
+                                "assets\\blocks\\grass.png",
+                                new List<string>() { "Breakable" }
+                            );
+
+                            Instance.GetLevel().children.Add(obj);
+                        }
+                        break;
+                    case BlockType.Dirt:
+                        {
+                            // dirt
+
+                            SolidObject obj = new SolidObject(
+                                new Point(blockCount, layerCount),
+                                new Size(blockSize, blockSize),
+                                "assets\\blocks\\dirt.png",
+                                new List<string>() { "Breakable" }
+                            );
+
+                            Instance.GetLevel().children.Add(obj);
+                        }
+                        break;
+                }
+
+                blockCount += blockSize;
+            }
+            layerCount += blockSize;
+        }
 
         // jumppad
-        Instance.GetLevel().children.Add(new SolidObject(
-            new Point(50, Height - (menu.Size.Height * 2) - 10),
-            new Size(30, 11),
-            Color.Red,
-            new List<string> { "JumpPad" }
-        ));
+        //Instance.GetLevel().children.Add(new SolidObject(
+        //    new Point(50, Height - (menu.Size.Height * 2) - 10),
+        //    new Size(30, 11),
+        //    Color.Red,
+        //    new List<string> { "JumpPad" }
+        //));
 
         // start the game winodw & engine
         Start();
@@ -51,6 +108,21 @@ public class BytecodeEngine : GameEngine
     {
         if (e == Keys.Space)
             Instance.GetLocalPlayer().JumpFromGround();
+
+        if (e == Keys.S)
+        {
+            List<SolidObject> objectsToRemove = new List<SolidObject>();
+
+            foreach (SolidObject obj in Instance.GetLevel().children)
+            {
+                if (obj.Tags.Contains("Breakable") && obj.DistanceToPoint(Instance.GetLocalPlayer().Position) < 20*2)
+                {
+                    objectsToRemove.Add(obj);
+                }
+            }
+
+            Instance.GetLevel().RemoveBulk(objectsToRemove);
+        }
 
         // call the base keypress function
         base.KeyPress(e, held, repeat);
@@ -83,11 +155,11 @@ public class BytecodeEngine : GameEngine
         Instance.GetLocalPlayer().Draw(ctx);
 
         // some drawings
-        ctx.DrawTriangle(new Point(10, 10), new Point(10, 100), new Point(100, 100), Color.Red, false);
-        ctx.DrawTriangle(new Point(110, 10), new Point(110, 100), new Point(200, 100), Color.Red, true);
+        //ctx.DrawTriangle(new Point(10, 10), new Point(10, 100), new Point(100, 100), Color.Red, false);
+        //ctx.DrawTriangle(new Point(110, 10), new Point(110, 100), new Point(200, 100), Color.Red, true);
 
-        ctx.DrawRectangle(new Point(10, 110), new Size(90, 90), Color.Red, false);
-        ctx.DrawRectangle(new Point(110, 110), new Size(90, 90), Color.Red, true);
+        //ctx.DrawRectangle(new Point(10, 110), new Size(90, 90), Color.Red, false);
+        //ctx.DrawRectangle(new Point(110, 110), new Size(90, 90), Color.Red, true);
 
         // end the frame & draw all the remaining objects to the screen
         ctx.EndFrame();
