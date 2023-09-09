@@ -53,7 +53,7 @@ public class TerrainGen
 
                 if (world[y][x] == BlockType.Stone)
                 {
-                    if ((wormNoiseX > 0.6f || wormNoiseY > 0.9f))
+                    if (wormNoiseX > 0.6f || wormNoiseY > 0.9f)
                     {
                         world[y][x] = BlockType.Air;
                     }
