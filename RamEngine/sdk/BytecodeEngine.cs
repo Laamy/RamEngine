@@ -93,12 +93,12 @@ public class BytecodeEngine : GameEngine
         }
 
         // jumppad
-        //Instance.GetLevel().children.Add(new SolidObject(
-        //    new Point(50, Height - (menu.Size.Height * 2) - 10),
-        //    new Size(30, 11),
-        //    Color.Red,
-        //    new List<string> { "JumpPad" }
-        //));
+        Instance.GetLevel().children.Add(new SolidObject(
+            new Point(50, Height - (menu.Size.Height * 2) - 10),
+            new Size(30, 11),
+            Color.Red,
+            new List<string> { "JumpPad" }
+        ));
 
         // start the game winodw & engine
         Start();
