@@ -27,6 +27,17 @@ public class Player
     // extra stuff
     public bool IsOnGround = false;
 
+    /// <summary>
+    /// Returns the center of the player
+    /// </summary>
+    public Point Center
+    {
+        get => new Point(Position.X + (Size.Width / 2), Position.Y + (Size.Height / 2));
+    }
+
+    /// <summary>
+    /// Applies knockback to the player
+    /// </summary>
     public void ApplyKnockback(Point knockbackForce, int duration)
     {
         knockbackVelocity = knockbackForce;
@@ -34,6 +45,9 @@ public class Player
         knockbackTimer = 0;
     }
 
+    /// <summary>
+    /// Creates a player
+    /// </summary>>
     public Player(Point position, Size size, Color color)
     {
         Position = position;
@@ -41,6 +55,9 @@ public class Player
         Color = color;
     }
 
+    /// <summary>
+    /// Makes the player jump from the ground
+    /// </summary>
     public void JumpFromGround(float power = 1)
     {
         if (IsOnGround)

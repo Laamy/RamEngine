@@ -16,10 +16,25 @@ public class BytecodeEngine : GameEngine
         // setup menustrip
         MenuStrip menu = new MenuStrip();
 
-        // cretae file & exit button in file
-        ToolStripMenuItem file = new ToolStripMenuItem("File");
-        file.DropDownItems.Add("Exit", null, (s, e) => Close());
-        menu.Items.Add(file);
+        {
+            // create file & exit button in file
+            ToolStripMenuItem file = new ToolStripMenuItem("File");
+
+            {
+                file.DropDownItems.Add("Exit", null, (s, e) => Close());
+                menu.Items.Add(file);
+            }
+        }
+
+        {
+            // create debug & otehr stuff in debug
+            ToolStripMenuItem debug = new ToolStripMenuItem("Debug");
+
+            {
+                debug.DropDownItems.Add("Reload Packs", null, (s, e) => TextureHandler.ReloadTextures());
+                menu.Items.Add(debug);
+            }
+        }
 
         Controls.Add(menu);
 
@@ -29,9 +44,9 @@ public class BytecodeEngine : GameEngine
         //Instance.GetLevel().children.Add(new SolidObject( new Point(0, Height - (menu.Size.Height * 2)), new Size(Width, 10), Color.White ));
 
         // world stuff
-        int blockSize = 20;
+        int blockSize = 15;
 
-        BlockType[][] world = TerrainGen.GenerateWorld(Width/ blockSize, Height/ blockSize, 7, 0.1f);
+        BlockType[][] world = TerrainGen.GenerateWorld(Width/ blockSize, Height/ blockSize, 7, 0.08f);
 
         // foreach layer
         int layerCount = 100;
@@ -93,12 +108,12 @@ public class BytecodeEngine : GameEngine
         }
 
         // jumppad
-        Instance.GetLevel().children.Add(new SolidObject(
-            new Point(50, Height - (menu.Size.Height * 2) - 10),
-            new Size(30, 11),
-            Color.Red,
-            new List<string> { "JumpPad" }
-        ));
+        //Instance.GetLevel().children.Add(new SolidObject(
+        //    new Point(50, Height - (menu.Size.Height * 2) - 10),
+        //    new Size(30, 11),
+        //    Color.Red,
+        //    new List<string> { "JumpPad" }
+        //));
 
         // start the game winodw & engine
         Start();
@@ -115,7 +130,7 @@ public class BytecodeEngine : GameEngine
 
             foreach (SolidObject obj in Instance.GetLevel().children)
             {
-                if (obj.Tags.Contains("Breakable") && obj.DistanceToPoint(Instance.GetLocalPlayer().Position) < 20*2)
+                if (obj.Tags.Contains("Breakable") && obj.DistanceTo(Instance.GetLocalPlayer().Center) < 32)
                 {
                     objectsToRemove.Add(obj);
                 }
@@ -152,6 +167,7 @@ public class BytecodeEngine : GameEngine
 
         // player & scene real quick
         Instance.GetLevel().Draw(ctx);
+        Instance.GetLevel().Update(this);
         Instance.GetLocalPlayer().Draw(ctx);
 
         // some drawings
