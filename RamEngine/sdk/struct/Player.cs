@@ -1,26 +1,27 @@
-﻿using System;
-using System.ComponentModel.Design;
-using System.Drawing;
+﻿using OpenTK.Graphics;
+using OpenTK.Input;
+using System;
+using System.Numerics;
 using System.Windows.Forms;
 
 public class Player
 {
     // actor stuff
-    public Point Position;
-    public Size Size;
-    public Color Color;
+    public Vector2 Position;
+    public Vector2 Size;
+    public Color4 Color;
 
     // main physics stuff
-    public Point Velocity = new Point(0, 0);
+    public Vector2 Velocity = new Vector2(0, 0);
     public int Gravity = 1;
 
     // movement stuff
     public int JumpForce = -12;
     public int Speed = 5;
-    public Point Movement = new Point(0, 0);
+    public Vector2 Movement = new Vector2(0, 0);
 
     // fancy knockback stuff
-    private Point knockbackVelocity = Point.Empty;
+    private Vector2 knockbackVelocity = Vector2.Zero;
     private int knockbackDuration = 0;
     private int knockbackTimer = 0;
 
@@ -30,15 +31,15 @@ public class Player
     /// <summary>
     /// Returns the center of the player
     /// </summary>
-    public Point Center
+    public Vector2 Center
     {
-        get => new Point(Position.X + (Size.Width / 2), Position.Y + (Size.Height / 2));
+        get => new Vector2(Position.X + (Size.X / 2), Position.Y + (Size.Y / 2));
     }
 
     /// <summary>
     /// Applies knockback to the player
     /// </summary>
-    public void ApplyKnockback(Point knockbackForce, int duration)
+    public void ApplyKnockback(Vector2 knockbackForce, int duration)
     {
         knockbackVelocity = knockbackForce;
         knockbackDuration = duration;
@@ -48,7 +49,7 @@ public class Player
     /// <summary>
     /// Creates a player
     /// </summary>>
-    public Player(Point position, Size size, Color color)
+    public Player(Vector2 position, Vector2 size, Color4 color)
     {
         Position = position;
         Size = size;
@@ -69,10 +70,10 @@ public class Player
 
     public bool IsCollidingWith(SolidObject solidObject)
     {
-        return Position.X < solidObject.Position.X + solidObject.Size.Width &&
-               Position.X + Size.Width > solidObject.Position.X &&
-               Position.Y < solidObject.Position.Y + solidObject.Size.Height &&
-               Position.Y + Size.Height > solidObject.Position.Y;
+        return Position.X < solidObject.Position.X + solidObject.Size.X &&
+               Position.X + Size.X > solidObject.Position.X &&
+               Position.Y < solidObject.Position.Y + solidObject.Size.Y &&
+               Position.Y + Size.Y > solidObject.Position.Y;
     }
 
     public bool ResolveCollisionWith(SolidObject solidObject)
@@ -80,8 +81,8 @@ public class Player
         // resolve the collision with the solid object if the player is colliding
         if (IsCollidingWith(solidObject))
         {
-            int overlapX = Math.Min(Position.X + Size.Width, solidObject.Position.X + solidObject.Size.Width) - Math.Max(Position.X, solidObject.Position.X);
-            int overlapY = Math.Min(Position.Y + Size.Height, solidObject.Position.Y + solidObject.Size.Height) - Math.Max(Position.Y, solidObject.Position.Y);
+            int overlapX = (int)(Math.Min(Position.X + Size.X, solidObject.Position.X + solidObject.Size.X) - Math.Max(Position.X, solidObject.Position.X));
+            int overlapY = (int)(Math.Min(Position.Y + Size.X, solidObject.Position.Y + solidObject.Size.Y) - Math.Max(Position.Y, solidObject.Position.Y));
 
             if (overlapX < overlapY)
             {
@@ -121,10 +122,10 @@ public class Player
         Velocity.Y += Gravity;
 
         // add movement to the velocity based on the keymap (WASD)
-        if (engine.keymap[Keys.A] == true)
+        if (engine.keymap[Key.A] == true)
             Movement.X--;
 
-        if (engine.keymap[Keys.D] == true)
+        if (engine.keymap[Key.D] == true)
             Movement.X++;
 
 
@@ -138,7 +139,7 @@ public class Player
             // If the knockback duration is reached, reset the knockback
             if (knockbackTimer == knockbackDuration)
             {
-                knockbackVelocity = Point.Empty;
+                knockbackVelocity = Vector2.Zero;
                 knockbackDuration = 0;
             }
         }
@@ -149,7 +150,7 @@ public class Player
             // Velocity.Y = Movement.Y * Speed; (You can enable this for vertical movement if needed)
 
             // Reset the movement vector to zero after applying it
-            Movement = new Point(0, 0);
+            Movement = new Vector2(0, 0);
         }
 
         // Add movement to the position based on the velocity
@@ -157,7 +158,7 @@ public class Player
         Position.Y += Velocity.Y;
 
         // reset the movement
-        Movement = new Point(0, 0);
+        Movement = new Vector2(0, 0);
     }
 
     public void Draw(RenderContext ctx)

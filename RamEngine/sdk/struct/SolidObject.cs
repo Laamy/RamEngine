@@ -1,81 +1,44 @@
-﻿using System;
+﻿using OpenTK.Graphics;
+using RamEngine.sdk;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.Windows.Forms;
+using System.Management.Instrumentation;
+using System.Numerics;
 
 public class SolidObject
 {
-    // basic stuff
-    public Point Position;
-    public Size Size;
-    public Color? Color;
-    public string texturePath = "";
-    public List<string> Tags;
-
-    // physics stuff
-    public bool Anchored = true;
-    public Point Velocity = new Point(0, 0);
-    public int Gravity = 1;
-
-    // particle stuff
-    public float Speed = -1;
-    public float Duration = -1;
-
-    /// <summary>
-    /// Set the speed of the particle (if its a particle)
-    /// </summary>
-    public void SetSpeed(float speed)
-        => Speed = speed;
-
-    /// <summary>
-    /// Set the duration of the particle in ticks (30 a second for smooth animation)
-    /// (if its a particle)
-    /// </summary>
-    public void SetDuration(float duration) 
-        => Duration = duration;
+    public Vector2 Position { get; private set; }
+    public Vector2 Size { get; private set; }
+    public Color4 Color { get; private set; }
+    public string TexturePath { get; private set; }
+    public bool Anchored { get; set; } = true;
+    public Vector2 Velocity { get; set; } = Vector2.Zero;
 
     /// <summary>
     /// The center of the object
     /// </summary>
-    public Point Center
+    public Vector2 Center
     {
-        get => new Point(Position.X + (Size.Width / 2), Position.Y + (Size.Height / 2));
+        get => new Vector2(Position.X + (Size.X / 2), Position.Y + (Size.Y / 2));
     }
 
     /// <summary>
     /// Quick constructor for a solid object
     /// </summary>
-    public SolidObject(Point position, Size size, Color color, List<string> tags = null)
+    public SolidObject(Vector2 position, Vector2 size, Color4 color, string texturePath = "")
     {
         Position = position;
         Size = size;
         Color = color;
-        texturePath = null;
-
-        if (tags == null)
-            Tags = new List<string>();
-        else Tags = tags;
-    }
-
-    /// <summary>
-    /// Quick constructor for a solid object using a texture instead of solid colours
-    /// </summary>
-    public SolidObject(Point position, Size size, string texture, List<string> tags = null)
-    {
-        Position = position;
-        Size = size;
-        Color = null;
-        texturePath = texture;
-
-        if (tags == null)
-            Tags = new List<string>();
-        else Tags = tags;
+        TexturePath = texturePath;
     }
 
     /// <summary>
     /// Calculate the distance to a point
     /// </summary>
-    public int DistanceTo(Point point)
+    public int DistanceTo(Vector2 point)
         => (int)Math.Sqrt(Math.Pow(point.X - Center.X, 2) + Math.Pow(point.Y - Center.Y, 2));
 
     /// <summary>
@@ -90,45 +53,60 @@ public class SolidObject
     public int DistanceTo(Player player)
         => DistanceTo(player.Center);
 
+    public void Move(Vector2 delta)
+    {
+        Position += delta;
+    }
+
+    public void Update(float deltatime)
+    {
+        // Add gravity to the velocity (if needed)
+        // Velocity.Y += Gravity;
+
+        // Update the position based on the velocity
+        Position += Velocity * deltatime;
+    }
+
     public bool IsCollidingWith(SolidObject solidObject)
     {
-        return Position.X < solidObject.Position.X + solidObject.Size.Width &&
-               Position.X + Size.Width > solidObject.Position.X &&
-               Position.Y < solidObject.Position.Y + solidObject.Size.Height &&
-               Position.Y + Size.Height > solidObject.Position.Y;
+        return Position.X < solidObject.Position.X + solidObject.Size.X &&
+               Position.X + Size.X > solidObject.Position.X &&
+               Position.Y < solidObject.Position.Y + solidObject.Size.Y &&
+               Position.Y + Size.Y > solidObject.Position.Y;
     }
+
+    public bool IsCollidingWith(Vector2 point)
+        => IsCollidingWith(new SolidObject(point, new Vector2(1, 1), System.Drawing.Color.Black));
 
     public bool ResolveCollisionWith(SolidObject solidObject)
     {
         // resolve the collision with the solid object if the player is colliding
         if (IsCollidingWith(solidObject))
         {
-            int overlapX = Math.Min(Position.X + Size.Width, solidObject.Position.X + solidObject.Size.Width) - Math.Max(Position.X, solidObject.Position.X);
-            int overlapY = Math.Min(Position.Y + Size.Height, solidObject.Position.Y + solidObject.Size.Height) - Math.Max(Position.Y, solidObject.Position.Y);
+            int overlapX = (int)(Math.Min(Position.X + Size.X, solidObject.Position.X + solidObject.Size.X) - Math.Max(Position.X, solidObject.Position.X));
+            int overlapY = (int)(Math.Min(Position.Y + Size.Y, solidObject.Position.Y + solidObject.Size.Y) - Math.Max(Position.Y, solidObject.Position.Y));
 
             if (overlapX < overlapY)
             {
                 // we are colliding with the left/right of the solid object
                 if (Position.X < solidObject.Position.X)
-                    Position.X -= overlapX;
+                    Position -= new Vector2() { X = overlapX };
                 else
-                    Position.X += overlapX;
-
-                Velocity.X = 0;
+                    Position += new Vector2() { X = overlapX };
             }
             else
             {
                 // we are colliding with the top/bottom of the solid object
                 if (Position.Y < solidObject.Position.Y)
                 {
-                    Position.Y -= overlapY;
+                    Position -= new Vector2() { Y = overlapY };
                 }
                 else
                 {
-                    Position.Y += overlapY;
+                    Position += new Vector2() { Y = overlapY };
                 }
 
-                Velocity.Y = 0;
+                Velocity.SetY(0);
             }
             return true;
         }
@@ -139,29 +117,29 @@ public class SolidObject
     public void Update(GameEngine engine)
     {
         // add gravity to the velocity
-        Velocity.Y += Gravity;
+        Velocity.SetY(Velocity.Y + 1f);
 
         // Add movement to the position based on the velocity
-        Position.X += Velocity.X;
-        Position.Y += Velocity.Y;
+        Position.SetX(Position.X + Velocity.X);
+        Position.SetY(Position.Y + Velocity.Y);
     }
 
     /// <summary>
     /// Render this object using the render context provided
     /// </summary>
     /// <param name="ctx"></param>
+
     public void Draw(RenderContext ctx)
     {
-        if (Color == null)
+        if (!string.IsNullOrEmpty(TexturePath))
         {
-            // texture path, draw the texture
-            ctx.DrawSprite(Position, Size, texturePath);
+            // Draw the texture
+            ctx.DrawSprite(Position, Size, TexturePath);
         }
         else
         {
-            // no texture path, draw a rectangle
-            Color color = Color ?? System.Drawing.Color.Transparent;
-            ctx.DrawRectangle(Position, Size, color, true);
+            // Draw a colored rectangle
+            ctx.DrawRectangle(Position, Size, Color, true);
         }
     }
 }

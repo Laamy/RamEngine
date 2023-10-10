@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Drawing;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
+using System.Numerics;
 
 public class ClientInstance
 {
     // define the player class
-    private Player LocalPlayer = new Player(new Point(100, 0), new Size(26, 32), Color.Red);
+    private Player LocalPlayer = new Player(new Vector2(100, 0), new Vector2(26, 32), Color.Red);
 
     // define the level class
     private Level Level = new Level();

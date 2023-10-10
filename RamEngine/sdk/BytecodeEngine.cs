@@ -1,52 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using OpenTK.Graphics;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 public class BytecodeEngine : GameEngine
 {
     public BytecodeEngine()
     {
-        // setup extra window properties
-        Text = "BytecodeEngine";
-
-        // disable resizing
-        FormBorderStyle = FormBorderStyle.FixedSingle;
-        MaximizeBox = false;
-        
-        // setup menustrip
-        MenuStrip menu = new MenuStrip();
-
-        {
-            // create file & exit button in file
-            ToolStripMenuItem file = new ToolStripMenuItem("File");
-
-            {
-                file.DropDownItems.Add("Exit", null, (s, e) => Close());
-                menu.Items.Add(file);
-            }
-        }
-
-        {
-            // create debug & otehr stuff in debug
-            ToolStripMenuItem debug = new ToolStripMenuItem("Debug");
-
-            {
-                debug.DropDownItems.Add("Reload Packs", null, (s, e) => TextureHandler.ReloadTextures());
-                menu.Items.Add(debug);
-            }
-        }
-
-        Controls.Add(menu);
-
-        //loop over all 4 window border walls and add solid objects to stop players from escaping them
-
-        // floor
-        //Instance.GetLevel().children.Add(new SolidObject( new Point(0, Height - (menu.Size.Height * 2)), new Size(Width, 10), Color.White ));
+        // block highlight
+        Instance.GetLevel().children.Add(BlockHighLight);
 
         // world stuff
-        int blockSize = 15;
-
-        BlockType[][] world = TerrainGen.GenerateWorld(Width/ blockSize, Height/ blockSize, 7, 0.08f);
+        int blockSize = 10;
+ 
+        BlockType[][] world = TerrainGen.GenerateWorld(Width / blockSize, (int)((Height) / blockSize), 8, 0.03f);
 
         // foreach layer
         int layerCount = 100;
@@ -56,17 +26,17 @@ public class BytecodeEngine : GameEngine
             // foreach terrain block
             foreach (BlockType block in layer)
             {
-                switch(block)
+                switch (block)
                 {
                     case BlockType.Stone:
                         {
                             // stone
 
                             SolidObject obj = new SolidObject(
-                                new Point(blockCount, layerCount),
-                                new Size(blockSize, blockSize),
-                                "assets\\blocks\\stone.png",
-                                new List<string>() { "Breakable" }
+                                new Vector2(blockCount, layerCount),
+                                new Vector2(blockSize, blockSize),
+                                Color4.Gray,
+                                "assets\\blocks\\stone.png"
                             );
 
                             Instance.GetLevel().children.Add(obj);
@@ -77,10 +47,10 @@ public class BytecodeEngine : GameEngine
                             // grass
 
                             SolidObject obj = new SolidObject(
-                                new Point(blockCount, layerCount),
-                                new Size(blockSize, blockSize),
-                                "assets\\blocks\\grass.png",
-                                new List<string>() { "Breakable" }
+                                new Vector2(blockCount, layerCount),
+                                new Vector2(blockSize, blockSize),
+                                Color4.Green,
+                                "assets\\blocks\\grass.png"
                             );
 
                             Instance.GetLevel().children.Add(obj);
@@ -91,10 +61,10 @@ public class BytecodeEngine : GameEngine
                             // dirt
 
                             SolidObject obj = new SolidObject(
-                                new Point(blockCount, layerCount),
-                                new Size(blockSize, blockSize),
-                                "assets\\blocks\\dirt.png",
-                                new List<string>() { "Breakable" }
+                                new Vector2(blockCount, layerCount),
+                                new Vector2(blockSize, blockSize),
+                                Color4.Brown,
+                                "assets\\blocks\\dirt.png"
                             );
 
                             Instance.GetLevel().children.Add(obj);
@@ -115,42 +85,75 @@ public class BytecodeEngine : GameEngine
         //    new List<string> { "JumpPad" }
         //));
 
-        // start the game winodw & engine
+        // start the game window & engine
         Start();
     }
 
-    protected override void KeyPress(Keys e, bool held, bool repeat)
-    {
-        if (e == Keys.Space)
-            Instance.GetLocalPlayer().JumpFromGround();
+    public SolidObject BlockHighLight = new SolidObject(new Vector2(0, 0), new Vector2(0, 0), Color.Yellow);
 
-        if (e == Keys.S)
-        {
-            List<SolidObject> objectsToRemove = new List<SolidObject>();
+    //protected override void MouseMoveClick(Point point, MouseButtons button)
+    //{
+    //    if (button == MouseButtons.Left)
+    //    {
+    //        Raycast ray = Instance.GetLevel().CastRay(Instance.GetLocalPlayer().Center, point);
+    //        if (ray != null)
+    //        {
+    //            if (ray.HasCollided && ray.Dist < 100)
+    //            {
+    //                Instance.GetLevel().Remove(ray.Hit);
+    //            }
+    //            else
+    //            {
+    //                // log ray information
+    //                Console.WriteLine("Dist: 0x" + ray.Dist + " " + ray.Position + " " + ray.HasCollided);
+    //            }
+    //        }
+    //    }
+    //}
 
-            foreach (SolidObject obj in Instance.GetLevel().children)
-            {
-                if (obj.Tags.Contains("Breakable") && obj.DistanceTo(Instance.GetLocalPlayer().Center) < 32)
-                {
-                    objectsToRemove.Add(obj);
-                }
-            }
+    //protected override void KeyPress(Keys e, bool held, bool repeat)
+    //{
+    //    if (e == Keys.Space)
+    //        Instance.GetLocalPlayer().JumpFromGround();
 
-            Instance.GetLevel().RemoveBulk(objectsToRemove);
-        }
+    //    if (e == Keys.G)
+    //    {
+    //        // create a particle
+    //        SolidObject obj = ParticleHandler.CreateParticle(5, 5, "assets\\blocks\\dirt.png", 100, new Point(0, 0));
+    //        obj.Position = new Point(300, 300);
 
-        // call the base keypress function
-        base.KeyPress(e, held, repeat);
-    }
+    //        Instance.GetLevel().children.Add(obj);
+    //    }
+
+    //    // debug key
+    //    if (e == Keys.S)
+    //    {
+    //        List<SolidObject> objectsToRemove = new List<SolidObject>();
+
+    //        foreach (SolidObject obj in Instance.GetLevel().children)
+    //        {
+    //            if (obj.Tags.Contains("Breakable") && obj.DistanceTo(Instance.GetLocalPlayer().Center) < 32)
+    //            {
+    //                objectsToRemove.Add(obj);
+    //            }
+    //        }
+
+    //        Instance.GetLevel().RemoveBulk(objectsToRemove);
+    //    }
+
+    //    // call the base keypress function
+    //    base.KeyPress(e, held, repeat);
+    //}
 
     protected override void OnUpdate(RenderContext ctx)
     {
         // clear last frame using black
         ctx.Clear(Color.Black);
+        ctx.BeginFrame();
 
         // display fps in the top right corner
-        SizeF size = ctx.MeasureText("FPS: " + GameFPS, 16, "Arial");
-        ctx.DrawText("FPS: " + GameFPS, new Point((int)(Width - size.Width - 10), 30), Color.Green, 16, "Arial");
+        //SizeF size = ctx.MeasureText("FPS: " + GameFPS, 16, "Arial");
+        //ctx.DrawText("FPS: " + GameFPS, new Point((int)(Width - size.Width - 10), 30), Color.Green, 16, "Arial");
 
         // update physics
         Instance.GetLocalPlayer().Update(this);
@@ -159,9 +162,7 @@ public class BytecodeEngine : GameEngine
         {
             if (Instance.GetLocalPlayer().ResolveCollisionWith(obj))
             {
-                // collided with the object so lets check the tags to see what we should do
-                if (obj.Tags.Contains("JumpPad"))
-                    Instance.GetLocalPlayer().ApplyKnockback(new Point(0, -15), 4);
+                // collided with object event triggered here
             }
         }
 

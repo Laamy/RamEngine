@@ -1,160 +1,128 @@
 ﻿using System.Collections.Generic;
-using System.Drawing.Drawing2D;
-using System.Drawing;
+using System.Numerics;
 
-// an optimized graphics object for our game engine
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+
 public class RenderContext
 {
-    private Graphics _g;
-    private Dictionary<Color, GraphicsPath> _outlinedPaths = new Dictionary<Color, GraphicsPath>();
-    private Dictionary<Color, GraphicsPath> _filledPaths = new Dictionary<Color, GraphicsPath>();
+    private double Time;
+    private Dictionary<Color4, List<Vector2>> filledPolygons;
+    private Dictionary<Color4, List<Vector2>> outlinedPolygons;
 
-    public RenderContext(Graphics g)
+    public RenderContext(double time)
     {
-        // store the graphics object
-        _g = g;
-
-        _g.SmoothingMode = SmoothingMode.AntiAlias;
+        Time = time;
+        filledPolygons = new Dictionary<Color4, List<Vector2>>();
+        outlinedPolygons = new Dictionary<Color4, List<Vector2>>();
     }
 
-    public void DrawSprite(Point p1, Size s1, string sprite)
+    public void Clear(Color4 color)
     {
-        // draw the sprite image using graphics path
-        // giving up on this for now
-
-        _g.DrawImage(TextureHandler.GetTexture(sprite), new Rectangle(p1, s1));
-
-        //GraphicsPath path = new GraphicsPath();
-        //path.AddRectangle(new Rectangle(p1, s1));
-        //DrawPath(Color.White, path);
+        GL.ClearColor(color.R, color.G, color.B, color.A);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
     }
 
-    public void Clear(Color color)
+    public void BeginFrame()
     {
-        // clear the screen using the color
-        _g.Clear(color);
+        // Set up any necessary OpenGL state here before rendering.
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    public SizeF MeasureText(string text, float size, string fontName)
+    public void EndFrame()
     {
-        // create a new font object (TODO: cache this)
-        using (Font font = new Font(fontName, size))
+        // Render filled polygons
+        foreach (var kvp in filledPolygons)
         {
-            // return the size of the text
-            return _g.MeasureString(text, font);
+            GL.Begin(PrimitiveType.Polygon);
+            GL.Color4(kvp.Key);
+            foreach (var vertex in kvp.Value)
+            {
+                GL.Vertex2(vertex.X, vertex.Y);
+            }
+            GL.End();
         }
-    }
 
-    public void DrawText(string text, Point p1, Color colour, float size = 16, string font = "Arial")
-    {
-        // draw the text using a graphics path
-        GraphicsPath path = new GraphicsPath();
-        path.AddString(text, new FontFamily(font), 3, size, p1, StringFormat.GenericDefault);
-        DrawPath(colour, path);
-    }
-
-    public void DrawTriangle(Point p1, Point p2, Point p3, Color colour, bool filled = true)
-    {
-        if (!filled)
+        // Render outlined polygons
+        foreach (var kvp in outlinedPolygons)
         {
-            // add the 3 lines to the graphics path
-            DrawLine(colour, p1, p2);
-            DrawLine(colour, p2, p3);
-            DrawLine(colour, p3, p1);
+            GL.Begin(PrimitiveType.LineLoop);
+            GL.Color4(kvp.Key);
+            foreach (var vertex in kvp.Value)
+            {
+                GL.Vertex2(vertex.X, vertex.Y);
+            }
+            GL.End();
+        }
+
+        // Clear the polygon lists
+        filledPolygons.Clear();
+        outlinedPolygons.Clear();
+    }
+
+    public void DrawSprite(Vector2 position, Vector2 size, string texturePath)
+    {
+        GL.Enable(EnableCap.Texture2D);
+        GL.BindTexture(TextureTarget.Texture2D, TextureHandler.GetTexture(texturePath));
+
+        GL.Begin(PrimitiveType.Quads);
+        GL.TexCoord2(0f, 0f); GL.Vertex2(position.X, position.Y);
+        GL.TexCoord2(1f, 0f); GL.Vertex2(position.X + size.X, position.Y);
+        GL.TexCoord2(1f, 1f); GL.Vertex2((position + size).X, (position + size).Y);
+        GL.TexCoord2(0f, 1f); GL.Vertex2(position.X, position.Y + size.Y);
+        GL.End();
+
+        GL.Disable(EnableCap.Texture2D);
+    }
+
+    public void DrawText(string text, Vector2 position, Color4 color, float size = 16, string font = "Arial")
+    {
+        // Implement text rendering using OpenGL fonts or textures.
+        // This depends on your choice of text rendering approach (bitmap fonts, texture-based fonts, etc.).
+    }
+
+    public void DrawTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Color4 color, bool filled = true)
+    {
+        if (filled)
+        {
+            AddFilledPolygon(color, p1, p2, p3);
         }
         else
         {
-            // draw a filled in triangle using FillPath
-            GraphicsPath path = new GraphicsPath();
-            path.AddLine(p1, p2);
-            path.AddLine(p2, p3);
-            path.AddLine(p3, p1);
-            FillPath(colour, path);
+            AddOutlinedPolygon(color, p1, p2, p3);
         }
     }
 
-    public void DrawRectangle(Point p1, Size s1, Color colour, bool filled = true)
+    public void DrawRectangle(Vector2 p1, Vector2 p2, Color4 color, bool filled = true)
     {
-        if (!filled)
+        if (filled)
         {
-            // draw an outline of a rectangle using DrawLine function
-            DrawLine(colour, p1, new Point(p1.X + s1.Width, p1.Y));
-            DrawLine(colour, new Point(p1.X + s1.Width, p1.Y), new Point(p1.X + s1.Width, p1.Y + s1.Height));
-            DrawLine(colour, new Point(p1.X + s1.Width, p1.Y + s1.Height), new Point(p1.X, p1.Y + s1.Height));
-            DrawLine(colour, new Point(p1.X, p1.Y + s1.Height), p1);
+            AddFilledPolygon(color, p1, new Vector2(p2.X, p1.Y), p2, new Vector2(p1.X, p2.Y));
         }
         else
         {
-            // draw a filled rectangle using FillPath
-            GraphicsPath path = new GraphicsPath();
-            path.AddLine(p1, new Point(p1.X + s1.Width, p1.Y));
-            path.AddLine(new Point(p1.X + s1.Width, p1.Y), new Point(p1.X + s1.Width, p1.Y + s1.Height));
-            path.AddLine(new Point(p1.X + s1.Width, p1.Y + s1.Height), new Point(p1.X, p1.Y + s1.Height));
-            path.AddLine(new Point(p1.X, p1.Y + s1.Height), p1);
-            FillPath(colour, path);
+            AddOutlinedPolygon(color, p1, new Vector2(p2.X, p1.Y), p2, new Vector2(p1.X, p2.Y));
         }
     }
 
-    private void DrawLine(Color colour, Point p1, Point p2)
+    private void AddFilledPolygon(Color4 color, params Vector2[] vertices)
     {
-        // create a new graphics path
-        GraphicsPath path = new GraphicsPath();
+        if (!filledPolygons.ContainsKey(color))
+        {
+            filledPolygons[color] = new List<Vector2>();
+        }
 
-        // add the line to the path
-        path.AddLine(p1, p2);
-
-        // draw the path
-        DrawPath(colour, path);
+        filledPolygons[color].AddRange(vertices);
     }
 
-    public void DrawPath(Color pen, GraphicsPath path)
+    private void AddOutlinedPolygon(Color4 color, params Vector2[] vertices)
     {
-        // draw the path using the pen
-        if (!_outlinedPaths.ContainsKey(pen))
+        if (!outlinedPolygons.ContainsKey(color))
         {
-            // create a new graphics path cuz we don't have one for this colour yet
-            _outlinedPaths[pen] = path;
-        }
-        else
-        {
-            // combine the graphics paths
-            _outlinedPaths[pen].AddPath(path, false);
-        }
-    }
-
-    public void FillPath(Color pen, GraphicsPath path)
-    {
-        // draw the path using the pen
-        if (!_filledPaths.ContainsKey(pen))
-        {
-            // create a new graphics path cuz we don't have one for this colour yet
-            _filledPaths[pen] = path;
-        }
-        else
-        {
-            // combine the graphics paths
-            _filledPaths[pen].AddPath(path, false);
-        }
-    }
-
-    public void EndFrame(float scale = 1)
-    {
-        // scale before drawing
-        _g.ScaleTransform(scale, scale);
-
-        foreach (KeyValuePair<Color, GraphicsPath> path in _outlinedPaths)
-        {
-            // draw the path using the pen
-            _g.DrawPath(new Pen(path.Key), path.Value);
+            outlinedPolygons[color] = new List<Vector2>();
         }
 
-        foreach (KeyValuePair<Color, GraphicsPath> path in _filledPaths)
-        {
-            // draw the path using the pen
-            _g.FillPath(new SolidBrush(path.Key), path.Value);
-        }
-
-        // clear the paths
-        _outlinedPaths.Clear();
+        outlinedPolygons[color].AddRange(vertices);
     }
 }
