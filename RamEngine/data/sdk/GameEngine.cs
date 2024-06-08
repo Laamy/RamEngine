@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
@@ -17,10 +17,12 @@ public class GameEngine : Form
 
     public float deltaTime = 0;
     public int GameFPS = 0;
-    public ClientInstance Instance = new ClientInstance();
+    public static ClientInstance Instance = new ClientInstance();
 
     public GameEngine()
     {
+        Console.WriteLine("Building window..");
+
         // setup window properties
         Size = new Size(800, 600);
         DoubleBuffered = true;
@@ -30,6 +32,7 @@ public class GameEngine : Form
         FormClosing += (s, e) => Stop();
         Paint += (s, e) => OnUpdate(new RenderContext(e.Graphics));
 
+        Console.WriteLine("Building keyinfo..");
         // setup keymap
         for (int i = 0; i < 0xFF; i++)
             keymap.Add((Keys)i, false);
@@ -70,7 +73,7 @@ public class GameEngine : Form
         gameLoopThread = new Thread(GameLoop);
         gameLoopThread.Start();
 
-        // when the window exists it causes an exception so lets catch then ignore it
+        // when the window exits it causes an exception so lets catch then ignore it
         try
         {
             Application.Run(this);
@@ -90,6 +93,7 @@ public class GameEngine : Form
         stopwatch = Stopwatch.StartNew();
         fpsStopwatch = Stopwatch.StartNew();
 
+        Console.WriteLine("Building game loop..");
         // game loop
         while (isRunning)
         {

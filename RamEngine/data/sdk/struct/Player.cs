@@ -1,41 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-public class SolidObject
+public class Player
 {
-    // basic stuff
+    // actor stuff
     public Point Position;
     public Size Size;
-    public Color? Color;
-    public string texturePath = "";
-    public List<string> Tags;
+    public Color Color;
 
-    // physics stuff
-    public bool Anchored = true;
+    // main physics stuff
     public Point Velocity = new Point(0, 0);
     public int Gravity = 1;
 
-    // particle stuff
-    public float Speed = -1;
-    public float Duration = -1;
+    // movement stuff
+    public int JumpForce = -12;
+    public int Speed = 5;
+    public Point Movement = new Point(0, 0);
+
+    // fancy knockback stuff
+    private Point knockbackVelocity = Point.Empty;
+    private int knockbackDuration = 0;
+    private int knockbackTimer = 0;
+
+    // extra stuff
+    public bool IsOnGround = false;
 
     /// <summary>
-    /// Set the speed of the particle (if its a particle)
-    /// </summary>
-    public void SetSpeed(float speed)
-        => Speed = speed;
-
-    /// <summary>
-    /// Set the duration of the particle in ticks (30 a second for smooth animation)
-    /// (if its a particle)
-    /// </summary>
-    public void SetDuration(float duration) 
-        => Duration = duration;
-
-    /// <summary>
-    /// The center of the object
+    /// Returns the center of the player
     /// </summary>
     public Point Center
     {
@@ -43,52 +35,36 @@ public class SolidObject
     }
 
     /// <summary>
-    /// Quick constructor for a solid object
+    /// Applies knockback to the player
     /// </summary>
-    public SolidObject(Point position, Size size, Color color, List<string> tags = null)
+    public void ApplyKnockback(Point knockbackForce, int duration)
+    {
+        knockbackVelocity = knockbackForce;
+        knockbackDuration = duration;
+        knockbackTimer = 0;
+    }
+
+    /// <summary>
+    /// Creates a player
+    /// </summary>>
+    public Player(Point position, Size size, Color color)
     {
         Position = position;
         Size = size;
         Color = color;
-        texturePath = null;
-
-        if (tags == null)
-            Tags = new List<string>();
-        else Tags = tags;
     }
 
     /// <summary>
-    /// Quick constructor for a solid object using a texture instead of solid colours
+    /// Makes the player jump from the ground
     /// </summary>
-    public SolidObject(Point position, Size size, string texture, List<string> tags = null)
+    public void JumpFromGround(float power = 1)
     {
-        Position = position;
-        Size = size;
-        Color = null;
-        texturePath = texture;
-
-        if (tags == null)
-            Tags = new List<string>();
-        else Tags = tags;
+        if (IsOnGround)
+        {
+            Velocity.Y = (int)(JumpForce * power);
+            IsOnGround = false;
+        }
     }
-
-    /// <summary>
-    /// Calculate the distance to a point
-    /// </summary>
-    public int DistanceTo(Point point)
-        => (int)Math.Sqrt(Math.Pow(point.X - Center.X, 2) + Math.Pow(point.Y - Center.Y, 2));
-
-    /// <summary>
-    /// Calculate the distance to another object
-    /// </summary>
-    public int DistanceTo(SolidObject obj)
-        => DistanceTo(obj.Center);
-
-    /// <summary>
-    /// Calculate the distance to a player
-    /// </summary>
-    public int DistanceTo(Player player)
-        => DistanceTo(player.Center);
 
     public bool IsCollidingWith(SolidObject solidObject)
     {
@@ -121,10 +97,12 @@ public class SolidObject
                 // we are colliding with the top/bottom of the solid object
                 if (Position.Y < solidObject.Position.Y)
                 {
+                    IsOnGround = true;
                     Position.Y -= overlapY;
                 }
                 else
                 {
+                    IsOnGround = false;
                     Position.Y += overlapY;
                 }
 
@@ -141,27 +119,52 @@ public class SolidObject
         // add gravity to the velocity
         Velocity.Y += Gravity;
 
-        // Add movement to the position based on the velocity
-        Position.X += Velocity.X;
-        Position.Y += Velocity.Y;
-    }
+        // add movement to the velocity based on the keymap (WASD)
+        if (engine.keymap[Keys.A] == true)
+            Movement.X--;
 
-    /// <summary>
-    /// Render this object using the render context provided
-    /// </summary>
-    /// <param name="ctx"></param>
-    public void Draw(RenderContext ctx)
-    {
-        if (Color == null)
+        if (engine.keymap[Keys.D] == true)
+            Movement.X++;
+
+
+        // Apply knockback if it's active
+        if (knockbackTimer < knockbackDuration)
         {
-            // texture path, draw the texture
-            ctx.DrawSprite(Position, Size, texturePath);
+            Velocity.X = knockbackVelocity.X;
+            Velocity.Y = knockbackVelocity.Y;
+            knockbackTimer++;
+
+            // If the knockback duration is reached, reset the knockback
+            if (knockbackTimer == knockbackDuration)
+            {
+                knockbackVelocity = Point.Empty;
+                knockbackDuration = 0;
+            }
         }
         else
         {
-            // no texture path, draw a rectangle
-            Color color = Color ?? System.Drawing.Color.Transparent;
-            ctx.DrawRectangle(Position, Size, color, true);
+            // Apply constant movement based on the keymap (WASD)
+            Velocity.X = Movement.X * Speed;
+            // Velocity.Y = Movement.Y * Speed; (You can enable this for vertical movement if needed)
+
+            // Reset the movement vector to zero after applying it
+            Movement = new Point(0, 0);
         }
+
+        // Add movement to the position based on the velocity
+        Position.X += Velocity.X;
+        Position.Y += Velocity.Y;
+
+        // reset the movement
+        Movement = new Point(0, 0);
+    }
+
+    public void Draw(RenderContext ctx)
+    {
+        // draw the player sprite at assets\\ram-sprite-32x32.png
+        ctx.DrawSprite(Position, Size, "assets\\ram-sprite-32x32.png");
+
+        // draw a filled rectangle at the positon
+        //ctx.DrawRectangle(Position, Size, Color, true);
     }
 }
